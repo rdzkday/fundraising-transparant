@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Dashboard Transparansi Dana</title>
+<title>membersamai.id — Transparansi Dana</title>
 <style>
 :root{--bg:#f7f7f5;--card:#fff;--ink:#1b1b1b;--mut:#6b6b66;--line:#e4e4de;--ac:#0f6b5c;--warn:#b45309;--bad:#b91c1c}
 @media (prefers-color-scheme:dark){:root{--bg:#121413;--card:#1b1e1d;--ink:#eceee9;--mut:#9aa09a;--line:#2d3230;--ac:#4fc3ad;--warn:#f0a85a;--bad:#f08a8a}}
@@ -15,9 +15,9 @@ h1{font-size:1.4rem;margin:8px 0 2px}h2{font-size:1.05rem;margin:0 0 8px}
 .grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));margin:16px 0}
 .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;overflow-x:auto}
 .big{font-size:1.5rem;font-weight:700}
-nav{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
-nav button{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;padding:8px 12px;cursor:pointer;font:inherit}
-nav button[aria-selected=true]{background:var(--ac);color:#fff;border-color:var(--ac)}
+#tabs{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+#tabs button{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;padding:8px 12px;cursor:pointer;font:inherit}
+#tabs button[aria-selected=true]{background:var(--ac);color:#fff;border-color:var(--ac)}
 table{width:100%;border-collapse:collapse;font-size:.9rem}
 th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
 td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
@@ -26,17 +26,70 @@ tr.t td{font-weight:700}
 .ok{color:var(--ac)}.no{color:var(--bad)}
 section[hidden]{display:none}
 footer{margin:24px 0;color:var(--mut);font-size:.8rem}
+
+html{scroll-behavior:smooth}a{color:var(--ac)}
+header.top{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
+header.top div{max-width:960px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+header.top b{margin-right:auto;font-size:1.05rem}
+header.top a{color:var(--ink);text-decoration:none;font-size:.9rem}header.top a:hover{color:var(--ac)}
+.btn{display:inline-block;background:var(--ac);color:#fff!important;padding:10px 18px;border-radius:8px;text-decoration:none;font-weight:600}
+.btn.o{background:transparent;color:var(--ac)!important;border:1px solid var(--ac)}
+.hero{padding:56px 0 40px}.hero h1{font-size:2rem;line-height:1.2;margin:12px 0}.hero p{max-width:640px;font-size:1.05rem}
+.hero .cta{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
+main>section{padding:36px 0;border-top:1px solid var(--line);scroll-margin-top:56px}
+main>section>h2{font-size:1.4rem;margin:0 0 12px}
+.docs{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.doc h3{margin:0 0 4px;font-size:1rem}.doc p{margin:0 0 10px}.doc .btns{display:flex;gap:8px;flex-wrap:wrap}
+.doc .btn{padding:6px 12px;font-size:.85rem}
 </style>
 </head>
 <body>
+<header class="top"><div><b>membersamai.id</b>
+  <a href="#beranda">Beranda</a><a href="#tentang">Tentang Kami</a><a href="#dashboard">Dashboard</a><a href="#laporan">Laporan Keuangan</a>
+  <a class="btn" href="#donasi">Donasi</a></div></header>
 <main>
-  <span class="badge">Data fiktif — contoh mockup</span>
-  <h1 id="nama"></h1>
+  <section id="beranda" class="hero" style="border:0">
+    <span class="badge">Data fiktif — contoh mockup</span>
+    <h1>Kesehatan mental yang baik tumbuh dari masyarakat yang adil.</h1>
+    <p>Setiap rupiah donasi dicatat terbuka: dari mana masuk, ke program apa, dan siapa mitra penerimanya.</p>
+    <div class="cta"><a class="btn" href="#donasi">Mulai donasi</a><a class="btn o" href="#dashboard">Lihat dashboard</a></div>
+  </section>
+
+  <section id="tentang">
+    <h2>Tentang Kami</h2>
+    <div class="card">
+      <p><b>Membersamai.id</b> adalah lembaga yang berfokus meningkatkan kesehatan mental. Kami percaya kesehatan mental yang baik adalah dampak dari struktur masyarakat yang baik. Keputusan politik ikut memengaruhi kesejahteraan, dan dapat meningkatkan atau memperburuk kualitas kesehatan mental orang-orang di dalamnya.</p>
+      <p><b>Donasi Anda menjadi voucher konseling.</b> Untuk saat ini, donasi yang masuk kami konversi menjadi voucher konseling di membersamai.id bagi:</p>
+      <ul><li>korban dan tahanan politik, dan</li><li>korban bencana alam di Indonesia.</li></ul>
+      <p>Butuh teman bicara? Layanan konseling tersedia di <a href="https://membersamai.id" target="_blank" rel="noopener">membersamai.id</a>.</p>
+      <a class="btn" href="https://membersamai.id" target="_blank" rel="noopener">Kunjungi membersamai.id</a>
+    </div>
+  </section>
+
+  <section id="dashboard">
+  <h2 id="nama"></h2>
   <div class="mut" id="periode"></div>
   <div class="grid" id="tiles"></div>
   <nav role="tablist" id="tabs"></nav>
   <div id="views"></div>
   <div class="card" style="margin-top:12px"><h2>Pemeriksaan silang otomatis</h2><div id="checks"></div></div>
+  </section>
+
+  <section id="laporan">
+    <h2>Laporan Keuangan</h2>
+    <p class="mut">Dokumen di bawah ini dummy (data fiktif) untuk mockup. Format mengikuti laporan auditor independen dan laporan keuangan ISAK 35.</p>
+    <div class="docs">
+      <div class="card doc"><h3>Laporan Auditor Independen 2025</h3><p class="mut">Opini audit atas laporan keuangan tahun 2025 · PDF</p><div class="btns"><a class="btn" href="dokumen/laporan-auditor-independen-2025.pdf" target="_blank">Buka</a><a class="btn o" href="dokumen/laporan-auditor-independen-2025.pdf" download>Unduh</a></div></div>
+      <div class="card doc"><h3>Laporan Keuangan 2025</h3><p class="mut">Posisi keuangan, penghasilan, perubahan aset neto, arus kas, catatan · PDF</p><div class="btns"><a class="btn" href="dokumen/laporan-keuangan-2025.pdf" target="_blank">Buka</a><a class="btn o" href="dokumen/laporan-keuangan-2025.pdf" download>Unduh</a></div></div>
+      <div class="card doc"><h3>Laporan Tahunan 2025</h3><p class="mut">Ringkasan kegiatan dan penyaluran per program · PDF</p><div class="btns"><a class="btn" href="dokumen/laporan-tahunan-2025.pdf" target="_blank">Buka</a><a class="btn o" href="dokumen/laporan-tahunan-2025.pdf" download>Unduh</a></div></div>
+    </div>
+  </section>
+
+  <section id="donasi">
+    <h2>Donasi</h2>
+    <div class="card"><p>Formulir donasi dan kode unik QRIS sedang dalam pengembangan.</p></div>
+  </section>
+
   <footer>Dashboard hanya ringkasan; laporan tahunan resmi tetap wajib (UU Yayasan Pasal 49). Donatur hanya ditampilkan inisial. Data berasal dari sheet publik tersensor, bukan data mentah.</footer>
 </main>
 <script src="data.js"></script>
