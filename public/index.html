@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dashboard Transparansi Dana</title>
+<style>
+:root{--bg:#f7f7f5;--card:#fff;--ink:#1b1b1b;--mut:#6b6b66;--line:#e4e4de;--ac:#0f6b5c;--warn:#b45309;--bad:#b91c1c}
+@media (prefers-color-scheme:dark){:root{--bg:#121413;--card:#1b1e1d;--ink:#eceee9;--mut:#9aa09a;--line:#2d3230;--ac:#4fc3ad;--warn:#f0a85a;--bad:#f08a8a}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,sans-serif}
+main{max-width:960px;margin:0 auto;padding:16px}
+h1{font-size:1.4rem;margin:8px 0 2px}h2{font-size:1.05rem;margin:0 0 8px}
+.mut{color:var(--mut);font-size:.85rem}
+.badge{display:inline-block;background:var(--card);border:1px solid var(--line);border-radius:99px;padding:2px 10px;font-size:.75rem;color:var(--warn)}
+.grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));margin:16px 0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;overflow-x:auto}
+.big{font-size:1.5rem;font-weight:700}
+nav{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+nav button{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;padding:8px 12px;cursor:pointer;font:inherit}
+nav button[aria-selected=true]{background:var(--ac);color:#fff;border-color:var(--ac)}
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+tr.t td{font-weight:700}
+.bar{height:10px;background:var(--line);border-radius:5px;overflow:hidden}.bar i{display:block;height:100%;background:var(--ac)}
+.ok{color:var(--ac)}.no{color:var(--bad)}
+section[hidden]{display:none}
+footer{margin:24px 0;color:var(--mut);font-size:.8rem}
+</style>
+</head>
+<body>
+<main>
+  <span class="badge">Data fiktif — contoh mockup</span>
+  <h1 id="nama"></h1>
+  <div class="mut" id="periode"></div>
+  <div class="grid" id="tiles"></div>
+  <nav role="tablist" id="tabs"></nav>
+  <div id="views"></div>
+  <div class="card" style="margin-top:12px"><h2>Pemeriksaan silang otomatis</h2><div id="checks"></div></div>
+  <footer>Dashboard hanya ringkasan; laporan tahunan resmi tetap wajib (UU Yayasan Pasal 49). Donatur hanya ditampilkan inisial. Data berasal dari sheet publik tersensor, bukan data mentah.</footer>
+</main>
+<script src="data.js"></script>
+<script>
+const D = window.DATA, $ = s => document.querySelector(s);
+const rp = n => "Rp" + Math.round(n).toLocaleString("id-ID");
+const sum = (a, f) => a.reduce((s, x) => s + f(x), 0);
+const pn = id => D.program.find(p => p.id === id).nama;
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+// --- hitung ---
+const masuk = sum(D.donasi, d => d.jumlah);
+const salur = sum(D.penyaluran, p => p.jumlah);
+const beban = sum(D.beban, b => b.jumlah);
+const perProg = D.program.map(p => {
+  const bruto = sum(D.donasi.filter(d => d.prog === p.id), d => d.jumlah);
+  const f = Math.round(bruto * D.tarifOperasional); // dibulatkan per program agar total cocok
+  const s = sum(D.penyaluran.filter(x => x.prog === p.id), x => x.jumlah);
+  return { ...p, fee: f, masuk: bruto - f, salur: s, sisa: bruto - f - s };
+});
+const fee = sum(perProg, p => p.fee);
+const terbatas = masuk - fee;
+const sisaDengan = D.saldoAwal.dengan + terbatas - salur;
+const sisaTanpa = D.saldoAwal.tanpa + fee - beban;
+const total = sisaDengan + sisaTanpa;
+
+$("#nama").textContent = D.lembaga;
+$("#periode").textContent = "Periode " + D.periode + " · tarif operasional " + (D.tarifOperasional * 100) + "%";
+$("#tiles").innerHTML = [["Total masuk", rp(masuk)], ["Tersalur ke program", rp(salur)], ["Saldo dana program", rp(sisaDengan)], ["Operasional (kas lembaga)", rp(beban) + " dipakai"]]
+  .map(([k, v]) => `<div class="card"><div class="mut">${k}</div><div class="big">${v}</div></div>`).join("");
+
+// --- 5 komponen ISAK 35 ---
+const T = (head, rows) => `<div class="card"><table><thead><tr>${head.map((h, i) => `<th class="${i ? "n" : ""}">${h}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table></div>`;
+const R = (c, t) => `<tr${t ? ' class="t"' : ""}>${c.map((v, i) => `<td class="${i ? "n" : ""}">${v}</td>`).join("")}</tr>`;
+
+const views = {
+  "Punya apa, sisanya berapa?": () => T(["Laporan posisi keuangan", "Jumlah"],
+    R(["Kas dan setara kas", rp(total)]) + R(["Total aset", rp(total)], 1) +
+    R(["Aset neto tanpa pembatasan (kas lembaga)", rp(sisaTanpa)]) +
+    R(["Aset neto dengan pembatasan (dana program)", rp(sisaDengan)]) +
+    R(["Total aset neto", rp(total)], 1)) +
+    `<div class="card" style="margin-top:12px"><h2>Alokasi per program</h2>${perProg.map(p => `<p>${esc(p.nama)} <span class="mut">— masuk ${rp(p.masuk)}, tersalur ${rp(p.salur)}, sisa ${rp(p.sisa)}</span><div class="bar"><i style="width:${p.masuk ? Math.min(100, p.salur / p.masuk * 100) : 0}%"></i></div></p>`).join("")}</div>`,
+
+  "Uang masuk dan keluar": () => T(["Laporan penghasilan komprehensif", "Tanpa pembatasan", "Dengan pembatasan"],
+    R(["Donasi (setelah potongan)", rp(0), rp(terbatas)]) +
+    R(["Pendapatan tarif operasional", rp(fee), rp(0)]) +
+    R(["Dana dilepas dari pembatasan (penyaluran)", rp(salur), "-" + rp(salur)]) +
+    R(["Penyaluran program", "-" + rp(salur), rp(0)]) +
+    R(["Beban operasional", "-" + rp(beban), rp(0)]) +
+    R(["Kenaikan aset neto", rp(fee - beban), rp(terbatas - salur)], 1)) +
+    `<div class="card" style="margin-top:12px"><h2>Penyaluran dan bukti</h2>${T(["Tanggal · Mitra · Program", "Jumlah"], D.penyaluran.map(p => R([`${p.tgl} · <b>${esc(p.mitra)}</b> · ${esc(pn(p.prog))} · <a href="${esc(p.bukti)}">bukti</a>`, rp(p.jumlah)])).join(""))}</div>`,
+
+  "Dari saldo awal ke akhir": () => T(["Laporan perubahan aset neto", "Tanpa pembatasan", "Dengan pembatasan", "Total"],
+    R(["Saldo awal", rp(D.saldoAwal.tanpa), rp(D.saldoAwal.dengan), rp(D.saldoAwal.tanpa + D.saldoAwal.dengan)]) +
+    R(["Perubahan periode", rp(fee - beban), rp(terbatas - salur), rp(fee - beban + terbatas - salur)]) +
+    R(["Saldo akhir", rp(sisaTanpa), rp(sisaDengan), rp(total)], 1)),
+
+  "Pergerakan uang tunai": () => T(["Laporan arus kas", "Jumlah"],
+    R(["Kas masuk dari donasi", rp(masuk)]) +
+    R(["Kas keluar untuk penyaluran", "-" + rp(salur)]) +
+    R(["Kas keluar untuk operasional", "-" + rp(beban)]) +
+    R(["Kenaikan kas bersih", rp(masuk - salur - beban)], 1) +
+    R(["Kas awal", rp(D.saldoAwal.tanpa + D.saldoAwal.dengan)]) +
+    R(["Kas akhir", rp(D.saldoAwal.tanpa + D.saldoAwal.dengan + masuk - salur - beban)], 1)),
+
+  "Catatan dan perlindungan data": () => `<div class="card"><ul>
+    <li>Disusun mengikuti ISAK 35 (efektif 1 Jan 2020), basis kas, sebagai ringkasan publik.</li>
+    <li>Tarif operasional tunggal ${D.tarifOperasional * 100}% dipotong dari tiap donasi dan masuk kas lembaga sebagai pendapatan tanpa pembatasan.</li>
+    <li>Dana program berstatus dengan pembatasan; donatur memilih program saat mengisi form.</li>
+    <li>Donatur hanya tampil inisial atau "Anonim". Tidak ada nomor telepon, email, atau rekening.</li>
+    <li>Kode unik pada nominal tidak dianggap donasi tambahan; seluruh nominal tercatat.</li>
+    </ul>
+    <h2>Donasi terbaru</h2>${T(["Tanggal · Donatur · Program", "Jumlah"], D.donasi.slice().reverse().slice(0, 6).map(d => R([`${d.tgl} · ${esc(d.ini)} · ${esc(pn(d.prog))}`, rp(d.jumlah)])).join(""))}</div>`
+};
+
+const tabs = $("#tabs"), box = $("#views");
+Object.keys(views).forEach((k, i) => {
+  const b = document.createElement("button");
+  b.textContent = k; b.setAttribute("role", "tab");
+  b.onclick = () => { [...tabs.children].forEach(x => x.setAttribute("aria-selected", x === b)); box.innerHTML = views[k](); };
+  tabs.appendChild(b); if (!i) b.click();
+});
+
+// --- pemeriksaan silang ---
+const cek = [
+  ["Total aset = total aset neto", true],
+  ["Sisa semua program = aset neto dengan pembatasan", sum(perProg, p => p.sisa) === sisaDengan],
+  ["Kas akhir (arus kas) = total posisi keuangan", D.saldoAwal.tanpa + D.saldoAwal.dengan + masuk - salur - beban === total],
+  ["Kas akhir = saldo bank hasil rekonsiliasi (" + rp(D.saldoBankDilaporkan) + ")", total === D.saldoBankDilaporkan],
+  ["Tidak ada program tersalur melebihi dana masuk", perProg.every(p => p.sisa >= 0)]
+];
+$("#checks").innerHTML = cek.map(([t, ok]) => `<div class="${ok ? "ok" : "no"}">${ok ? "✔" : "✘"} ${t}</div>`).join("");
+</script>
+</body>
+</html>
