@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fundraising Transparan</title>
+<meta name="description" content="Galang dana yang transparan hingga ke aliran dananya.">
+<style>
+:root{--bg:#faf8f4;--card:#fff;--ink:#1d2a24;--mute:#6b7a72;--line:#e6e2d9;--brand:#1f7a5a;--brand-soft:#e3f2ec;--warn:#b7791f;--r:14px}
+@media (prefers-color-scheme:dark){:root{--bg:#121815;--card:#1a221e;--ink:#eef3f0;--mute:#93a39a;--line:#2a352f;--brand:#4cc79a;--brand-soft:#173126;--warn:#e0a84a}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif}
+.wrap{max-width:880px;margin:0 auto;padding:0 16px 64px}
+header{padding:40px 0 20px}
+.tag{display:inline-block;background:var(--brand-soft);color:var(--brand);font-size:13px;font-weight:600;padding:4px 10px;border-radius:99px}
+h1{font-size:clamp(26px,5vw,38px);line-height:1.2;margin:12px 0 8px}
+.sub{color:var(--mute);margin:0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:20px;margin-top:16px}
+h2{font-size:18px;margin:0 0 14px}
+.big{font-size:clamp(28px,6vw,40px);font-weight:700;letter-spacing:-.5px}
+.bar{height:12px;background:var(--line);border-radius:99px;overflow:hidden;margin:12px 0 8px}
+.bar>i{display:block;height:100%;background:var(--brand);border-radius:99px}
+.row{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;color:var(--mute);font-size:14px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.stat{background:var(--bg);border-radius:10px;padding:14px}
+.stat b{display:block;font-size:20px}
+.stat span{color:var(--mute);font-size:13px}
+.flow{display:flex;height:44px;border-radius:10px;overflow:hidden;margin-bottom:14px}
+.flow div{display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:600;min-width:0}
+.leg{list-style:none;margin:0;padding:0}
+.leg li{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+.leg li:first-child{border-top:0}
+.dot{width:12px;height:12px;border-radius:3px;flex:none}
+.leg .n{flex:1}
+.leg small{display:block;color:var(--mute)}
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14px;min-width:560px}
+th,td{text-align:left;padding:10px 8px;border-top:1px solid var(--line);white-space:nowrap}
+th{color:var(--mute);font-weight:600;border-top:0}
+td.r,th.r{text-align:right}
+.in{color:var(--brand)}.out{color:var(--warn)}
+.tabs{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.tabs button{border:1px solid var(--line);background:none;color:var(--ink);padding:6px 14px;border-radius:99px;font:inherit;font-size:14px;cursor:pointer}
+.tabs button[aria-pressed=true]{background:var(--brand);color:#fff;border-color:var(--brand)}
+.note{font-size:13px;color:var(--mute);margin-top:20px}
+@media(max-width:560px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="tag">Data contoh (demo)</span>
+    <h1>Fundraising yang transparan hingga ke aliran dananya</h1>
+    <p class="sub">Setiap rupiah yang masuk dan keluar tercatat dan bisa dilihat publik.</p>
+  </header>
+
+  <section class="card" aria-labelledby="t-prog">
+    <h2 id="t-prog">Progres penggalangan</h2>
+    <div class="big" id="raised"></div>
+    <div class="bar"><i id="fill"></i></div>
+    <div class="row"><span id="pct"></span><span id="target"></span></div>
+    <div class="grid" style="margin-top:16px">
+      <div class="stat"><b id="donors"></b><span>Donatur</span></div>
+      <div class="stat"><b id="spent"></b><span>Sudah disalurkan</span></div>
+      <div class="stat"><b id="bal"></b><span>Saldo tersisa</span></div>
+    </div>
+  </section>
+
+  <section class="card" aria-labelledby="t-flow">
+    <h2 id="t-flow">Ke mana dana mengalir</h2>
+    <div class="flow" id="flow" role="img" aria-label="Proporsi alokasi dana"></div>
+    <ul class="leg" id="leg"></ul>
+  </section>
+
+  <section class="card" aria-labelledby="t-led">
+    <h2 id="t-led">Buku kas publik</h2>
+    <div class="tabs" id="tabs">
+      <button data-f="all" aria-pressed="true">Semua</button>
+      <button data-f="in" aria-pressed="false">Masuk</button>
+      <button data-f="out" aria-pressed="false">Keluar</button>
+    </div>
+    <div class="tw"><table>
+      <thead><tr><th>Tanggal</th><th>Keterangan</th><th>Kategori</th><th class="r">Jumlah</th></tr></thead>
+      <tbody id="body"></tbody>
+    </table></div>
+  </section>
+
+  <p class="note">Semua angka di halaman ini adalah data contoh. Ganti array <code>CAMPAIGN</code> dan <code>LEDGER</code> di <code>index.html</code> dengan data asli.</p>
+</div>
+
+<script>
+const CAMPAIGN = { target: 50000000 };
+const CATS = { "Program":"#1f7a5a", "Logistik":"#3b82a0", "Operasional":"#b7791f", "Biaya platform":"#8b6bb1" };
+const LEDGER = [
+  { d:"2026-10-01", t:"in",  n:"Donasi — Budi S.",            c:"Donasi",         a:500000 },
+  { d:"2026-10-02", t:"in",  n:"Donasi — Anonim",             c:"Donasi",         a:1000000 },
+  { d:"2026-10-04", t:"in",  n:"Donasi — Komunitas Kopi",     c:"Donasi",         a:7500000 },
+  { d:"2026-10-06", t:"in",  n:"Donasi — 42 donatur (batch)", c:"Donasi",         a:12400000 },
+  { d:"2026-10-08", t:"out", n:"Paket sembako 120 keluarga",  c:"Program",        a:9600000 },
+  { d:"2026-10-09", t:"out", n:"Sewa truk distribusi",        c:"Logistik",       a:2200000 },
+  { d:"2026-10-12", t:"in",  n:"Donasi — Dian R.",            c:"Donasi",         a:2000000 },
+  { d:"2026-10-14", t:"in",  n:"Donasi — 65 donatur (batch)", c:"Donasi",         a:11300000 },
+  { d:"2026-10-15", t:"out", n:"Beasiswa belajar 10 anak",    c:"Program",        a:8000000 },
+  { d:"2026-10-16", t:"out", n:"Biaya payment gateway",       c:"Biaya platform", a:650000 },
+  { d:"2026-10-18", t:"out", n:"Honor relawan lapangan",      c:"Operasional",    a:1500000 }
+];
+const rp = n => "Rp " + n.toLocaleString("id-ID");
+const dt = s => new Date(s).toLocaleDateString("id-ID",{day:"numeric",month:"short",year:"numeric"});
+
+const raised = LEDGER.filter(x=>x.t==="in").reduce((s,x)=>s+x.a,0);
+const spent  = LEDGER.filter(x=>x.t==="out").reduce((s,x)=>s+x.a,0);
+const $ = id => document.getElementById(id);
+
+$("raised").textContent = rp(raised);
+$("fill").style.width = Math.min(100, raised/CAMPAIGN.target*100) + "%";
+$("pct").textContent = Math.round(raised/CAMPAIGN.target*100) + "% tercapai";
+$("target").textContent = "Target " + rp(CAMPAIGN.target);
+$("donors").textContent = "±" + 110;
+$("spent").textContent = rp(spent);
+$("bal").textContent = rp(raised-spent);
+
+const byCat = {};
+LEDGER.filter(x=>x.t==="out").forEach(x=>byCat[x.c]=(byCat[x.c]||0)+x.a);
+Object.entries(byCat).sort((a,b)=>b[1]-a[1]).forEach(([c,v])=>{
+  const p = v/spent*100, col = CATS[c]||"#888";
+  const seg = document.createElement("div");
+  seg.style.cssText = `width:${p}%;background:${col}`;
+  seg.textContent = p>=10 ? Math.round(p)+"%" : "";
+  $("flow").appendChild(seg);
+  const li = document.createElement("li");
+  li.innerHTML = `<span class="dot" style="background:${col}"></span><span class="n">${c}<small>${Math.round(p)}% dari dana tersalurkan</small></span><b>${rp(v)}</b>`;
+  $("leg").appendChild(li);
+});
+
+function render(f){
+  $("body").innerHTML = LEDGER.filter(x=>f==="all"||x.t===f).slice().reverse().map(x=>
+    `<tr><td>${dt(x.d)}</td><td>${x.n}</td><td>${x.c}</td><td class="r ${x.t}">${x.t==="in"?"+":"−"}${rp(x.a)}</td></tr>`).join("");
+}
+$("tabs").addEventListener("click",e=>{
+  const b=e.target.closest("button"); if(!b) return;
+  document.querySelectorAll("#tabs button").forEach(x=>x.setAttribute("aria-pressed",x===b));
+  render(b.dataset.f);
+});
+render("all");
+</script>
+</body>
+</html>

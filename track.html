@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lacak Donasi</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="tag">Data contoh (demo)</span>
+    <h1>Status donasimu</h1>
+    <p class="sub" id="sub"></p>
+  </header>
+
+  <section class="card hide" id="main">
+    <dl class="kv" id="kv"></dl>
+  </section>
+
+  <section class="card hide" id="stepsCard">
+    <h2>Perjalanan donasi</h2>
+    <ol class="steps" id="steps"></ol>
+  </section>
+
+  <section class="card hide" id="demo">
+    <h2>Simulasi status (demo)</h2>
+    <p class="hint" style="margin-top:0">Di produksi, status diubah oleh sistem dan admin lembaga.</p>
+    <div class="chips" id="sim"></div>
+  </section>
+
+  <p class="note hide" id="bad">Link pelacak tidak valid. <a href="donate.html">Buat donasi baru</a>.</p>
+</div>
+
+<script>
+const rp = n => "Rp " + n.toLocaleString("id-ID");
+const fmt = s => new Date(s).toLocaleString("id-ID",{day:"numeric",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"});
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+let rec;
+try{ rec = JSON.parse(decodeURIComponent(escape(atob(location.hash.slice(1))))); if(!rec.id) throw 0; }
+catch{ $("bad").classList.remove("hide"); rec = null; }
+
+if(rec){
+  // Di produksi: ambil status dari server berdasarkan rec.id.
+  // Demo: status disimpan di localStorage per donasi.
+  const KEY = "status:"+rec.id;
+  const get = () => { try{ return parseInt(localStorage.getItem(KEY)||"0",10); }catch{ return 0; } };
+  const set = v => { try{ localStorage.setItem(KEY,v); }catch{} draw(); };
+
+  $("sub").textContent = "Kode donasi " + rec.id.toUpperCase();
+  $("kv").innerHTML = [
+    ["Jumlah transfer", "<b>"+rp(rec.total)+"</b>"],
+    ["Project", esc(rec.projName)],
+    ["Donatur", esc(rec.name||"Anonim")],
+    ["Dibuat", fmt(rec.at)],
+    ...(rec.msg ? [["Pesan", esc(rec.msg)]] : [])
+  ].map(([k,v])=>`<dt>${k}</dt><dd>${v}</dd>`).join("");
+  ["main","stepsCard","demo"].forEach(i=>$(i).classList.remove("hide"));
+
+  const STEPS = [
+    { t:"Menunggu transfer",        d:"Transfer sesuai nominal persis, termasuk 3 digit kode unik." },
+    { t:"Terverifikasi sistem",     d:"Transfer cocok dengan mutasi rekening lembaga." },
+    { t:"Disalurkan oleh lembaga",  d:"Dana sudah diserahkan ke penerima manfaat." },
+    { t:"Bukti penyaluran",         d:"" }
+  ];
+  function draw(){
+    const s = get();   // 0..3 = jumlah langkah selesai (4 = semua selesai)
+    $("steps").innerHTML = STEPS.map((x,i)=>{
+      const cls = i<s ? "done" : i===s ? "now" : "";
+      let extra = x.d ? `<small>${x.d}</small>` : "";
+      if(i===3){
+        extra = s>=4
+          ? `<div class="proof">Foto serah terima &amp; nota penyaluran, ${fmt(new Date())}.<br><small>Contoh: berkas bukti (foto, nota, laporan) ditampilkan di sini.</small></div>`
+          : `<small>Foto serah terima, nota, atau laporan akan muncul di sini setelah dana disalurkan.</small>`;
+      }
+      return `<li class="${cls}"><span class="ic">${i<s?"✓":i+1}</span><b>${x.t}</b>${extra}</li>`;
+    }).join("");
+    document.querySelectorAll("#sim button").forEach((b,i)=>b.setAttribute("aria-pressed", i===[0,0,1,2,3][s]));
+  }
+  ["Menunggu transfer","Terverifikasi","Disalurkan","Bukti terunggah"].forEach((l,i)=>{
+    const b=document.createElement("button"); b.type="button"; b.textContent=l;
+    b.onclick=()=>set([0,2,3,4][i]); $("sim").appendChild(b);
+  });
+  draw();
+}
+</script>
+</body>
+</html>

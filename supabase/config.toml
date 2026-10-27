@@ -1,0 +1,3 @@
+# Supabase CLI / GitHub integration config.
+# Set project_id to your Supabase project ref if you use the CLI locally.
+project_id = "fundraising-transparant"

@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Form Donasi</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="tag">Data contoh (demo)</span>
+    <h1>Mulai berdonasi</h1>
+    <p class="sub">Isi form, transfer, lalu pantau donasimu lewat link pelacak.</p>
+  </header>
+
+  <form class="card" id="f" novalidate>
+    <label>1. Nominal donasi</label>
+    <div class="chips" id="chips"></div>
+    <input id="custom" inputmode="numeric" placeholder="Atau ketik nominal lain (min. Rp 10.000)" style="margin-top:10px">
+
+    <div class="total" id="total" hidden>
+      <span>Total transfer (termasuk kode unik <b style="display:inline;font-size:inherit" id="code"></b>)</span>
+      <b id="sum"></b>
+      <span>Transfer harus persis sesuai angka ini agar otomatis terverifikasi.</span>
+    </div>
+
+    <label for="proj">2. Pilih project</label>
+    <select id="proj"></select>
+
+    <label for="name">Nama (opsional)</label>
+    <input id="name" maxlength="60" placeholder="Kosongkan untuk anonim">
+
+    <label for="msg">3. Pesan / detail tambahan (opsional)</label>
+    <textarea id="msg" maxlength="280" placeholder="Doa, harapan, atau catatan untuk penerima"></textarea>
+
+    <p class="hint hide" id="err" style="color:var(--warn)"></p>
+    <button class="btn" type="submit">Buat link pelacak</button>
+  </form>
+
+  <section class="card hide" id="done">
+    <h2>Donasi tercatat. Silakan transfer</h2>
+    <dl class="kv">
+      <dt>Jumlah transfer</dt><dd><b id="d-sum"></b></dd>
+      <dt>Rekening</dt><dd>BANK_CONTOH 000-000-0000<br>a.n. Lembaga Contoh</dd>
+      <dt>Project</dt><dd id="d-proj"></dd>
+    </dl>
+    <label style="margin-top:18px">Link pelacak donasimu</label>
+    <div class="linkbox"><input id="link" readonly><button type="button" id="copy">Salin</button></div>
+    <p class="hint">Simpan link ini. Buka kapan saja untuk melihat status.</p>
+    <a class="btn" id="open" href="#">Buka pelacak</a>
+    <a class="btn ghost" href="donate.html">Donasi lagi</a>
+  </section>
+
+  <p class="note">Demo statis tanpa server: data donasi disimpan di dalam link pelacak. Untuk produksi, simpan ke database dan verifikasi transfer otomatis lewat mutasi bank.</p>
+</div>
+
+<script>
+const PROJECTS = [
+  { id:"sembako",   n:"Sembako untuk keluarga prasejahtera" },
+  { id:"beasiswa",  n:"Beasiswa belajar anak" },
+  { id:"kesehatan", n:"Bantuan kesehatan darurat" }
+];
+const PRESETS = [25000,50000,100000,250000,500000];
+const rp = n => "Rp " + n.toLocaleString("id-ID");
+const $ = id => document.getElementById(id);
+let base = 0, code = 0;
+
+const newCode = () => 1 + Math.floor(Math.random()*999);   // 001–999
+function update(){
+  $("total").hidden = !base;
+  if(!base) return;
+  if(!code) code = newCode();
+  $("code").textContent = String(code).padStart(3,"0");
+  $("sum").textContent = rp(base + code);
+}
+function setBase(v){ base = v; update(); }
+
+PRESETS.forEach(v=>{
+  const b = document.createElement("button");
+  b.type="button"; b.textContent=rp(v); b.setAttribute("aria-pressed","false");
+  b.onclick=()=>{ document.querySelectorAll("#chips button").forEach(x=>x.setAttribute("aria-pressed",x===b)); $("custom").value=""; setBase(v); };
+  $("chips").appendChild(b);
+});
+$("custom").addEventListener("input",e=>{
+  document.querySelectorAll("#chips button").forEach(x=>x.setAttribute("aria-pressed","false"));
+  const v = parseInt(e.target.value.replace(/\D/g,"")||"0",10);
+  e.target.value = v ? v.toLocaleString("id-ID") : "";
+  setBase(v);
+});
+PROJECTS.forEach(p=>$("proj").add(new Option(p.n,p.id)));
+
+$("f").addEventListener("submit",e=>{
+  e.preventDefault();
+  if(base < 10000){ $("err").textContent="Pilih atau isi nominal minimal Rp 10.000."; $("err").classList.remove("hide"); return; }
+  $("err").classList.add("hide");
+  const proj = PROJECTS.find(p=>p.id===$("proj").value);
+  const rec = { id:Date.now().toString(36)+code, base, code, total:base+code, proj:proj.id, projName:proj.n,
+                name:$("name").value.trim(), msg:$("msg").value.trim(), at:new Date().toISOString() };
+  const hash = btoa(unescape(encodeURIComponent(JSON.stringify(rec))));
+  const url = new URL("track.html", location.href); url.hash = hash;
+  $("link").value = url.href; $("open").href = url.href;
+  $("d-sum").textContent = rp(rec.total); $("d-proj").textContent = proj.n;
+  $("f").classList.add("hide"); $("done").classList.remove("hide");
+  scrollTo(0,0);
+});
+$("copy").onclick=()=>{ navigator.clipboard?.writeText($("link").value); $("copy").textContent="Tersalin"; };
+</script>
+</body>
+</html>
